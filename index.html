@@ -143,18 +143,13 @@ font-family: "Tangerine", cursive;
 
     <div class="container">
         <button id="playBtn" class="btn">Play</button>
-        
-<div id="videoWrapper" class="video-wrapper">
-    <iframe
-        id="birthdayVideo"
-        src="https://drive.google.com/file/d/1bp9u4Zv6ASOyy0g2yZaim3WeDHqooiOu/preview"
-        width="640"
-        height="360"
-        allow="autoplay"
-        style="border:none; width:100%; border-radius:15px;"
-    ></iframe>
-    <button id="closeVideoBtn" aria-label="Close video">&#x2715;</button>
-</div>
+
+        <div id="videoWrapper" class="video-wrapper">
+            <video id="birthdayVideo" controls>
+                <source src="Minecraft-vid.mp4" type="video/mp4">
+            </video>
+            <button id="closeVideoBtn" aria-label="Close video">&#x2715;</button>
+        </div>
 
         <div id="controls" class="controls">
             <button id="replayBtn" class="btn btn-secondary">Replay</button>
@@ -262,9 +257,10 @@ font-family: "Tangerine", cursive;
         // ─── Flow helpers ──────────────────────────────────────────────────────
 
         function showVideo() {
-    videoWrapper.style.display = 'block';
-    controls.style.display     = 'flex'; // show buttons right away
-}
+            videoWrapper.style.display = 'block';
+            controls.style.display     = 'none';
+            video.play();
+        }
 
         function showPostVideoControls() {
             videoWrapper.style.display = 'none';
@@ -298,12 +294,17 @@ font-family: "Tangerine", cursive;
             showVideo();
         });
 
+        // Video finishes naturally
+        video.addEventListener('ended', showPostVideoControls);
+
         // User closes video early — bug fix: show controls instead of freezing
         closeVideoBtn.addEventListener('click', () => {
+            video.pause();
             showPostVideoControls();
         });
 
         replayBtn.addEventListener('click', () => {
+            video.currentTime = 0;
             showVideo();
         });
 
