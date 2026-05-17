@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tangerine:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #petalCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff758c, #ff7eb3);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 117, 140, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #ff7eb3;
+            color: #ff7eb3;
+        }
+
+        .video-wrapper {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+        }
+
+        video {
+            width: 100%;
+            display: block;
+z-index:2;
+        }
+
+        #closeVideoBtn {
+            position: absolute;
+            top: 15px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.55);
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            line-height: 1;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            transition: background 0.2s;
+        }
+
+        #closeVideoBtn:hover {
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        .controls {
+            display: none;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        #message {
+            display: none;
+            font-size: 2rem;
+            line-height: 1.6;
+            max-width: 600px;
+            font-weight: 300;
+font-family: "Tangerine", cursive;
+        }
+
+        .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInWord 0.5s forwards;
+            margin-right: 8px;
+        }
+
+        @keyframes fadeInWord {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="petalCanvas"></canvas>
+
+    <div class="container">
+        <button id="playBtn" class="btn">Play</button>
+
+        <div id="videoWrapper" class="video-wrapper">
+            <video id="birthdayVideo">
+                <source src="Minecraft-vid.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <button id="closeVideoBtn" aria-label="Close video">&#x2715;</button>
+        </div>
+
+        <div id="controls" class="controls">
+            <button id="replayBtn" class="btn btn-secondary">Replay</button>
+            <button id="nextBtn" class="btn">Next</button>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="The_Tulips.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // ─── Config ────────────────────────────────────────────────────────────
+        const PETAL_COUNT_IDLE   = 25;
+        const PETAL_COUNT_FINALE = 60;
+
+        const FINAL_TEXT =
+            "Happy Birthday to the sweetest, loveliest and most amazing person in my world! " +
+            "The times I spend with you or thinking of you are always the highlights of my days and I'm really looking forward to celebrating all of your birthdays as we grow old together " +
+            ". I love you! Mon coeur , Kochanie, Skarbie, mi amor de la vida 🌷";
+
+        // ─── DOM refs ──────────────────────────────────────────────────────────
+        const playBtn       = document.getElementById('playBtn');
+        const videoWrapper  = document.getElementById('videoWrapper');
+        const video         = document.getElementById('birthdayVideo');
+        const closeVideoBtn = document.getElementById('closeVideoBtn');
+        const controls      = document.getElementById('controls');
+        const replayBtn     = document.getElementById('replayBtn');
+        const nextBtn       = document.getElementById('nextBtn');
+        const messageEl     = document.getElementById('message');
+        const bgMusic       = document.getElementById('bgMusic');
+
+        // ─── Petal canvas ──────────────────────────────────────────────────────
+        const canvas = document.getElementById('petalCanvas');
+        const ctx    = canvas.getContext('2d');
+        let canvasW  = canvas.width  = window.innerWidth;
+        let canvasH  = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvasW = canvas.width  = window.innerWidth;
+            canvasH = canvas.height = window.innerHeight;
+        });
+
+        const petalImage = new Image();
+        petalImage.src = 'tulip.png';
+
+        let petals = [];
+
+        class Petal {
+            constructor() { this.reset(); }
+
+            reset() {
+                this.x             = Math.random() * canvasW;
+                this.y             = Math.random() * -canvasH - 50;
+                this.size          = Math.random() * 20 + 20;
+                this.speedY        = Math.random() * 1.5 + 1;
+                this.speedX        = Math.random() * 1 - 0.5;
+                this.opacity       = Math.random() * 0.4 + 0.6;
+                this.rotation      = Math.random() * Math.PI * 2;
+                this.rotationSpeed = Math.random() * 0.02 - 0.01;
+                this.flip          = Math.random();
+                this.flipSpeed     = Math.random() * 0.03;
+            }
+
+            update() {
+                this.y        += this.speedY;
+                this.x        += this.speedX;
+                this.rotation += this.rotationSpeed;
+                this.flip     += this.flipSpeed;
+                if (this.y > canvasH + 50) this.reset();
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.scale(Math.sin(this.flip), 1);
+                ctx.globalAlpha = this.opacity;
+                ctx.drawImage(petalImage, -this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        // Adds or removes petals to reach the target count
+        function setPetalCount(count) {
+            while (petals.length < count) petals.push(new Petal());
+            petals.length = count;
+        }
+
+        function animatePetals() {
+            ctx.clearRect(0, 0, canvasW, canvasH);
+            petals.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animatePetals);
+        }
+
+        petalImage.onload = () => {
+            setPetalCount(PETAL_COUNT_IDLE);
+            animatePetals();
+        };
+
+        if (petalImage.complete) petalImage.onload();
+
+        // ─── Flow helpers ──────────────────────────────────────────────────────
+
+        function showVideo() {
+            videoWrapper.style.display = 'block';
+            controls.style.display     = 'none';
+            video.play();
+        }
+
+        function showPostVideoControls() {
+            videoWrapper.style.display = 'none';
+            controls.style.display     = 'flex';
+        }
+
+        function showFinaleScreen() {
+            videoWrapper.style.display = 'none';
+            controls.style.display     = 'none';
+            messageEl.style.display    = 'block';
+            bgMusic.play();
+            setPetalCount(PETAL_COUNT_FINALE);
+            displayTextWordByWord();
+        }
+
+        function displayTextWordByWord() {
+            messageEl.innerHTML = '';
+            FINAL_TEXT.split(' ').forEach((word, i) => {
+                const span = document.createElement('span');
+                span.textContent = word;
+                span.className = 'word';
+                span.style.animationDelay = `${i * 0.3}s`;
+                messageEl.appendChild(span);
+            });
+        }
+
+        // ─── Event listeners ───────────────────────────────────────────────────
+
+        playBtn.addEventListener('click', () => {
+            playBtn.style.display = 'none';
+            showVideo();
+        });
+
+        // Video finishes naturally
+        video.addEventListener('ended', showPostVideoControls);
+
+        // User closes video early — bug fix: show controls instead of freezing
+        closeVideoBtn.addEventListener('click', () => {
+            video.pause();
+            showPostVideoControls();
+        });
+
+        replayBtn.addEventListener('click', () => {
+            video.currentTime = 0;
+            showVideo();
+        });
+
+        nextBtn.addEventListener('click', showFinaleScreen);
+    </script>
+</body>
+</html>
