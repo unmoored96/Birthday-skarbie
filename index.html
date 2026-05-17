@@ -111,19 +111,6 @@ z-index:2;
             margin-top: 20px;
             gap: 20px;
         }
-        #playOverlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 4rem;
-    color: white;
-    background: rgba(0,0,0,0.3);
-    cursor: pointer;
-    z-index: 4;
-    border-radius: 15px;
-}
 
         #message {
             display: none;
@@ -158,12 +145,9 @@ font-family: "Tangerine", cursive;
         <button id="playBtn" class="btn">Play</button>
 
         <div id="videoWrapper" class="video-wrapper">
-            <video id="birthdayVideo" playsinline>
-                
+            <video id="birthdayVideo" controls>
                 <source src="Minecraft-vid.mp4" type="video/mp4">
             </video>
-            <div id="playOverlay">▶</div>
-
             <button id="closeVideoBtn" aria-label="Close video">&#x2715;</button>
         </div>
 
@@ -199,7 +183,7 @@ font-family: "Tangerine", cursive;
         const nextBtn       = document.getElementById('nextBtn');
         const messageEl     = document.getElementById('message');
         const bgMusic       = document.getElementById('bgMusic');
-        const playOverlay = document.getElementById('playOverlay');
+
         // ─── Petal canvas ──────────────────────────────────────────────────────
         const canvas = document.getElementById('petalCanvas');
         const ctx    = canvas.getContext('2d');
@@ -273,10 +257,10 @@ font-family: "Tangerine", cursive;
         // ─── Flow helpers ──────────────────────────────────────────────────────
 
         function showVideo() {
-    videoWrapper.style.display = 'block';
-    controls.style.display = 'none';
-    playOverlay.style.display = 'flex';
-}
+            videoWrapper.style.display = 'block';
+            controls.style.display     = 'none';
+            video.play();
+        }
 
         function showPostVideoControls() {
             videoWrapper.style.display = 'none';
@@ -309,10 +293,7 @@ font-family: "Tangerine", cursive;
             playBtn.style.display = 'none';
             showVideo();
         });
-playOverlay.addEventListener('click', () => {
-    playOverlay.style.display = 'none';
-    video.play();
-});
+
         // Video finishes naturally
         video.addEventListener('ended', showPostVideoControls);
 
